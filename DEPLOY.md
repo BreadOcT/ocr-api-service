@@ -61,7 +61,7 @@ python ocr_server.py
 
 Server akan berjalan di `http://0.0.0.0:8000`.
 
-Atau dengan uvicorn langsung:
+Atau dengan uvicorn langsung (recommended):
 
 ```bash
 source venv/bin/activate

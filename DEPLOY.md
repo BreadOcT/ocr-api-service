@@ -13,7 +13,7 @@
 ## 1. Clone Repository
 
 ```bash
-git clone https://github.com/username/ocr-api-service.git /opt/ocr-api-service
+git clone https://github.com/BreadOcT/ocr-api-service.git /opt/ocr-api-service
 cd /opt/ocr-api-service
 ```
 

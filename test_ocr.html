@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test OCR Minimalis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            width: 90%;
+            cursor: pointer;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+        #resultArea {
+            margin-top: 20px;
+            text-align: left;
+            background: #282c34;
+            color: #61dafb;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 100px;
+        }
+        .loading {
+            color: #ff9800;
+            font-weight: bold;
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Scanner OCR Sederhana</h2>
+        <p>Pilih foto struk untuk mengekstrak teks</p>
+        
+        <input type="file" id="imageInput" accept="image/*">
+        <button id="scanBtn">Mulai Scan Gambar</button>
+        
+        <div id="loadingText" class="loading">Sedang memproses gambar... Mohon tunggu.</div>
+        
+        <div id="resultArea">Hasil teks akan muncul di sini...</div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const scanBtn = document.getElementById('scanBtn');
+        const resultArea = document.getElementById('resultArea');
+        const loadingText = document.getElementById('loadingText');
+
+        scanBtn.addEventListener('click', () => {
+            const file = imageInput.files[0];
+            if (!file) {
+                alert("Silakan pilih gambar terlebih dahulu!");
+                return;
+            }
+
+            // 1. Tampilkan loading
+            scanBtn.disabled = true;
+            loadingText.style.display = "block";
+            resultArea.innerText = "";
+
+            // 2. Ubah gambar menjadi Base64
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async function () {
+                // Ambil string base64 murni (hapus awalan 'data:image/jpeg;base64,')
+                const base64String = reader.result.split(',')[1];
+
+                try {
+                    // 3. Kirim ke Server Python Lokal Anda
+                    const response = await fetch("http://localhost:8000/scan-base64/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ image: base64String })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Gagal terhubung ke Server OCR (Pastikan server uvicorn menyala)");
+                    }
+
+                    const jsonResponse = await response.json();
+                    
+                    // 4. Tampilkan Hasilnya
+                    if (jsonResponse.data && jsonResponse.data.length > 0) {
+                        // Gabungkan baris-baris teks dengan enter (\n)
+                        resultArea.innerText = jsonResponse.data.join('\n');
+                    } else {
+                        resultArea.innerText = "Tidak ada teks yang terdeteksi pada gambar ini.";
+                    }
+
+                } catch (error) {
+                    resultArea.innerText = "Error: " + error.message;
+                } finally {
+                    // Sembunyikan loading
+                    scanBtn.disabled = false;
+                    loadingText.style.display = "none";
+                }
+            };
+            
+            reader.onerror = function (error) {
+                alert("Gagal membaca file gambar!");
+                scanBtn.disabled = false;
+                loadingText.style.display = "none";
+            };
+        });
+    </script>
+</body>
+</html>
